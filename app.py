@@ -20,9 +20,8 @@ logging.basicConfig(
 
 st.set_page_config(page_title="Autonomous B2B SaaS Engine", page_icon="⚡", layout="wide")
 
-# العنوان الرئيسي للمبيعات
+# 1. العنوان الرئيسي
 st.title("⚡ منصة المبيعات الذاتية والتحليلات (B2B SaaS Engine)")
-st.markdown("---")
 
 # الحسابات الفعلية
 if "accounts" not in st.session_state:
@@ -108,61 +107,62 @@ def fetch_and_classify_replies():
     st.session_state.crm_stats['no_reply'] = max(0, st.session_state.crm_stats['sent'] - st.session_state.crm_stats['replied'])
 
 # -------------------------------------------------------------
-# 🛡️ الشريط الجانبي (مصغر وفي ركن هادئ - خاص بالحسابات فقط)
+# 🛡️ 2. حالة الحسابات الخمسة (في شريط علوي صغير بدون زحمة)
 # -------------------------------------------------------------
-st.sidebar.header("🛡️ حالة الحسابات")
 active_count = sum(1 for a in st.session_state.accounts if a["status"] == "active")
-st.sidebar.metric("الحسابات النشطة", f"{active_count} / {len(st.session_state.accounts)}")
-
-with st.sidebar.expander("🔍 تفاصيل الحسابات الخمسة"):
+with st.expander(f"🛡️ حالة الحسابات والإرسال اليومي (الحسابات النشطة: {active_count}/{len(st.session_state.accounts)})"):
     for acc in st.session_state.accounts:
-        st.text(f"{acc['email']} | {acc['sent_today']}/40")
+        st.write(f"• **{acc['email']}** ➔ المرسل اليوم: `{acc['sent_today']}/40` | الحالة: `{acc['status']}`")
+
+st.markdown("---")
 
 # -------------------------------------------------------------
-# 📊 الواجهة الرئيسية الكبرى (مخصصة بالكامل للمبيعات والتحليلات)
+# 📊 3. لوحة تحكم المبيعات والصفقات (معدلة خصيصاً للموبايل)
 # -------------------------------------------------------------
-st.subheader("🎯 لوحة تحكم المبيعات والصفقات الفعلية (Live Sales Dashboard)")
+st.subheader("🎯 لوحة المبيعات والصفقات الفعلية (Live Sales Dashboard)")
 
 crm = st.session_state.crm_stats
 
-# مؤشرات المبيعات الضخمة والبارزة في الواجهة
+# عرض الأرقام بطريقة متجاوبة جداً
 m1, m2, m3, m4, m5 = st.columns(5)
-m1.metric("إجمالي الإيميلات المرسلة", f"{crm['sent']} شركة")
-m2.metric("في انتظار الرد ⏳", f"{crm['no_reply']} شركة")
-m3.metric("ردود فعلية 📩", f"{crm['replied']} شركة")
-m4.metric("طلبات الديمو 💻", f"{crm['demo']} شركات")
-m5.metric("عقود مؤكدة 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
+m1.metric("إجمالي الإيميلات", f"{crm['sent']}")
+m2.metric("في انتظار الرد ⏳", f"{crm['no_reply']}")
+m3.metric("ردود فعلية 📩", f"{crm['replied']}")
+m4.metric("طلبات الديمو 💻", f"{crm['demo']}")
+m5.metric("عقود مؤكدة 🎯", f"{crm['closed']}", f"${crm['closed']*200}/شهرياً")
 
-col_btn1, col_btn2 = st.columns([1, 4])
-with col_btn1:
-    if st.button("🔄 فحص الـ Inbox وتحديث الردود"):
-        with st.spinner("جاري فحص الحسابات..."):
-            fetch_and_classify_replies()
-        st.success("تم التحديث!")
+st.write("")
+if st.button("🔄 فحص الـ Inbox وتحديث الردود الحقيقية"):
+    with st.spinner("جاري فحص الحسابات وقراءة الرسائل الجديدة..."):
+        fetch_and_classify_replies()
+    st.success("تم تحديث البيانات بنجاح!")
 
-# رسم بياني واسع وبارز للمبيعات
-fig, ax = plt.subplots(figsize=(10, 3.2))
-categories = ['المرسل', 'لم يردوا', 'ردوا', 'طلبوا الديمو', 'تم التعاقد']
+# رسم بياني واضح ومناسب للموبايل
+fig, ax = plt.subplots(figsize=(8, 4))
+categories = ['المرسل', 'لم يردوا', 'ردوا', 'الديمو', 'مغلقة']
 values = [crm['sent'], crm['no_reply'], crm['replied'], crm['demo'], crm['closed']]
 colors = ['#2980B9', '#7F8C8D', '#F39C12', '#D35400', '#27AE60']
 
-ax.bar(categories, values, color=colors, width=0.6)
-ax.set_title('مسار المبيعات الفعلي (Live Conversion Funnel)', fontsize=12, fontweight='bold')
+ax.bar(categories, values, color=colors, width=0.5)
+ax.set_title('مسار المبيعات الفعلي (Conversion Funnel)', fontsize=12, fontweight='bold')
 ax.grid(axis='y', linestyle='--', alpha=0.4)
 st.pyplot(fig)
 
 st.markdown("---")
 
-# إعدادات الحملة والتشغيل
+# -------------------------------------------------------------
+# 🚀 4. إعدادات الحملة والتشغيل
+# -------------------------------------------------------------
 st.subheader("🚀 إعدادات حملة الاستحواذ الآلي")
+
+target_niche = st.text_input("مجال الشركات المستهدفة (مثال: ecommerce):", "ecommerce")
+subject = st.text_input("عنوان الرسالة البريدية", "تحليل مخزون متجرك وزيادة أرباحك بنسبة 30%")
+
 c_in1, c_in2 = st.columns(2)
 with c_in1:
-    target_niche = st.text_input("مجال الشركات المستهدفة (مثال: ecommerce):", "ecommerce")
-    subject = st.text_input("عنوان الرسالة البريدية", "تحليل مخزون متجرك وزيادة أرباحك بنسبة 30%")
-
+    delay_min = st.slider("الحد الأدنى للفاصل (ثواني)", 150, 600, 300)
 with c_in2:
-    delay_min = st.slider("الحد الأدنى للفاصل الزمني (ثواني)", 150, 600, 300)
-    delay_max = st.slider("الحد الأقصى للفاصل الزمني (ثواني)", 300, 900, 400)
+    delay_max = st.slider("الحد الأقصى للفاصل (ثواني)", 300, 900, 400)
 
 body = st.text_area("نص الرسالة الترويجية", "أهلاً بك، لاحظنا فرصة لتحسين إدارة المخزون في متجرك وتجنب نفاد المنتجات البائعة عبر نظامنا الذكي مقابل 200$ شهرياً...")
 
