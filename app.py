@@ -2,7 +2,6 @@ import streamlit as st
 import smtplib
 import imaplib
 import email
-from email.header import decode_header
 import time
 import random
 import re
@@ -12,7 +11,7 @@ import matplotlib.pyplot as plt
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# إعداد ملف تسجيل الأنشطة والأخطاء تلقائياً
+# إعداد ملف تسجيل الأنشطة والأخطاء
 logging.basicConfig(
     filename="outreach.log",
     level=logging.INFO,
@@ -21,10 +20,11 @@ logging.basicConfig(
 
 st.set_page_config(page_title="Autonomous B2B SaaS Engine", page_icon="⚡", layout="wide")
 
-st.title("⚡ ماكينة المبيعات الذاتية المحصنة (B2B SaaS Engine)")
+# العنوان الرئيسي للمبيعات
+st.title("⚡ منصة المبيعات الذاتية والتحليلات (B2B SaaS Engine)")
 st.markdown("---")
 
-# حساباتك الحقيقية مدمجة مسبقاً
+# الحسابات الفعلية
 if "accounts" not in st.session_state:
     st.session_state.accounts = [
         {"provider": "gmail", "email": "Anassadek5525@gmail.com", "password": "atig ffwp ddxd vgcf", "sent_today": 0, "status": "active"},
@@ -34,7 +34,7 @@ if "accounts" not in st.session_state:
         {"provider": "outlook", "email": "Anassadek5575@outlook.com", "password": "Anas#$@()501093083973=55", "sent_today": 0, "status": "active"}
     ]
 
-# العدادات تبدأ من صفر وتعتمد على البيانات الفعليّة والحقيقية فقط
+# العدادات الفعلية تبدأ من الصفر
 if "crm_stats" not in st.session_state:
     st.session_state.crm_stats = {
         "sent": 0,
@@ -52,9 +52,7 @@ def auto_discover_200_leads(niche):
     raw_leads = [f"contact@{niche}store{i}.com" for i in range(1, 201)]
     return [e for e in raw_leads if is_valid_email(e)]
 
-# -------------------------------------------------------------
-# 🤖 محرك فحص وصندوق الوارد وتصنيف الردود تلقائياً (IMAP Auto-Reader)
-# -------------------------------------------------------------
+# قارئ الردود الفعلي من الـ Inbox
 def fetch_and_classify_replies():
     replied_count = 0
     demo_count = 0
@@ -72,7 +70,6 @@ def fetch_and_classify_replies():
             mail.login(e, pwd)
             mail.select("inbox")
             
-            # البحث عن الإيميلات الغير مقروءة أو الجديدة
             status, messages = mail.search(None, 'UNSEEN')
             email_ids = messages[0].split()
             
@@ -92,7 +89,6 @@ def fetch_and_classify_replies():
                         
                         body_lower = body_text.lower()
                         
-                        # تحليل النوايا الحقيقي للرسائل الواردة
                         if any(w in body_lower for w in ["demo", "ديمو", "تجربة", "شرح", "try"]):
                             demo_count += 1
                             replied_count += 1
@@ -106,72 +102,79 @@ def fetch_and_classify_replies():
         except Exception as ex:
             logging.error(f"IMAP Read Error on {e}: {ex}")
 
-    # تحديث العدادات بأرقام حقيقية
     st.session_state.crm_stats['replied'] += replied_count
     st.session_state.crm_stats['demo'] += demo_count
     st.session_state.crm_stats['closed'] += closed_count
     st.session_state.crm_stats['no_reply'] = max(0, st.session_state.crm_stats['sent'] - st.session_state.crm_stats['replied'])
 
-# الشريط الجانبي لمراقبة الحسابات
-st.sidebar.header("🛡️ لوحة مراقبة الأمان")
+# -------------------------------------------------------------
+# 🛡️ الشريط الجانبي (مصغر وفي ركن هادئ - خاص بالحسابات فقط)
+# -------------------------------------------------------------
+st.sidebar.header("🛡️ حالة الحسابات")
 active_count = sum(1 for a in st.session_state.accounts if a["status"] == "active")
-st.sidebar.metric("الحسابات النشطة حالياً", f"{active_count} / {len(st.session_state.accounts)}")
-st.sidebar.markdown("---")
-st.sidebar.subheader("📋 حالة الحسابات اليومية")
-for acc in st.session_state.accounts:
-    st.sidebar.text(f"{acc['email'].split('@')[0]}... | المرسل: {acc['sent_today']}/40")
+st.sidebar.metric("الحسابات النشطة", f"{active_count} / {len(st.session_state.accounts)}")
 
-# 📊 عرض الإحصائيات الفعليّة
-st.subheader("📊 لوحة تتبع المبيعات والردود الفعلية (Live Funnel)")
+with st.sidebar.expander("🔍 تفاصيل الحسابات الخمسة"):
+    for acc in st.session_state.accounts:
+        st.text(f"{acc['email']} | {acc['sent_today']}/40")
+
+# -------------------------------------------------------------
+# 📊 الواجهة الرئيسية الكبرى (مخصصة بالكامل للمبيعات والتحليلات)
+# -------------------------------------------------------------
+st.subheader("🎯 لوحة تحكم المبيعات والصفقات الفعلية (Live Sales Dashboard)")
 
 crm = st.session_state.crm_stats
 
-c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("إجمالي المرسل الفعلي", f"{crm['sent']} شركة")
-c2.metric("لم يتم الرد بعد ⏳", f"{crm['no_reply']} شركة")
-c3.metric("شركات ردت فعلياً 📩", f"{crm['replied']} شركة")
-c4.metric("طلبوا الديمو فعلياً 💻", f"{crm['demo']} شركات")
-c5.metric("عقود مؤكدة 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
+# مؤشرات المبيعات الضخمة والبارزة في الواجهة
+m1, m2, m3, m4, m5 = st.columns(5)
+m1.metric("إجمالي الإيميلات المرسلة", f"{crm['sent']} شركة")
+m2.metric("في انتظار الرد ⏳", f"{crm['no_reply']} شركة")
+m3.metric("ردود فعلية 📩", f"{crm['replied']} شركة")
+m4.metric("طلبات الديمو 💻", f"{crm['demo']} شركات")
+m5.metric("عقود مؤكدة 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
 
-if st.button("🔄 فحص صندوق الوارد (Inbox) وتحديث الردود الحقيقية"):
-    with st.spinner("جاري الاتصال بحساباتك وقراءة الرسائل الجديدة وتصنيفها..."):
-        fetch_and_classify_replies()
-    st.success("✅ تم فحص الحسابات وتحديث الأرقام بناءً على الرسائل الحقيقية!")
+col_btn1, col_btn2 = st.columns([1, 4])
+with col_btn1:
+    if st.button("🔄 فحص الـ Inbox وتحديث الردود"):
+        with st.spinner("جاري فحص الحسابات..."):
+            fetch_and_classify_replies()
+        st.success("تم التحديث!")
 
-# رسم بياني واقعي بناءً على الأرقام الفعلية
-fig, ax = plt.subplots(figsize=(8, 3))
+# رسم بياني واسع وبارز للمبيعات
+fig, ax = plt.subplots(figsize=(10, 3.2))
 categories = ['المرسل', 'لم يردوا', 'ردوا', 'طلبوا الديمو', 'تم التعاقد']
 values = [crm['sent'], crm['no_reply'], crm['replied'], crm['demo'], crm['closed']]
-colors = ['#3498db', '#95a5a6', '#f1c40f', '#e67e22', '#2ecc71']
+colors = ['#2980B9', '#7F8C8D', '#F39C12', '#D35400', '#27AE60']
 
-ax.bar(categories, values, color=colors)
-ax.set_title('مسار المبيعات الفعلي للعملاء (Real-time Sales Funnel)', fontsize=11, fontweight='bold')
-ax.grid(axis='y', linestyle='--', alpha=0.5)
+ax.bar(categories, values, color=colors, width=0.6)
+ax.set_title('مسار المبيعات الفعلي (Live Conversion Funnel)', fontsize=12, fontweight='bold')
+ax.grid(axis='y', linestyle='--', alpha=0.4)
 st.pyplot(fig)
 
 st.markdown("---")
 
-col1, col2 = st.columns(2)
-with col1:
-    target_niche = st.text_input("حدد مجال الشركات المستهدفة (مثال: ecommerce, retail):", "ecommerce")
+# إعدادات الحملة والتشغيل
+st.subheader("🚀 إعدادات حملة الاستحواذ الآلي")
+c_in1, c_in2 = st.columns(2)
+with c_in1:
+    target_niche = st.text_input("مجال الشركات المستهدفة (مثال: ecommerce):", "ecommerce")
     subject = st.text_input("عنوان الرسالة البريدية", "تحليل مخزون متجرك وزيادة أرباحك بنسبة 30%")
 
-with col2:
-    delay_min = st.slider("الحد الأدنى للفاصل الزمني (بالثواني)", 150, 600, 300)
-    delay_max = st.slider("الحد الأقصى للفاصل الزمني (بالثواني)", 300, 900, 400)
+with c_in2:
+    delay_min = st.slider("الحد الأدنى للفاصل الزمني (ثواني)", 150, 600, 300)
+    delay_max = st.slider("الحد الأقصى للفاصل الزمني (ثواني)", 300, 900, 400)
 
 body = st.text_area("نص الرسالة الترويجية", "أهلاً بك، لاحظنا فرصة لتحسين إدارة المخزون في متجرك وتجنب نفاد المنتجات البائعة عبر نظامنا الذكي مقابل 200$ شهرياً...")
 
-# زر التشغيل الذاتي
-if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي بالكامل)"):
+if st.button("🚀 بدء حملة الـ 200 شركة أوتوماتيكياً"):
     if not target_niche:
-        st.error("❌ الرجاء تحديد مجال الشركات أولاً!")
+        st.error("❌ الرجاء تحديد المجال أولاً!")
     else:
-        st.info(f"🔍 جاري البحث الآلي وتوليد قائمة بـ 200 شركة في مجال: `{target_niche}`...")
+        st.info(f"🔍 جاري توليد وإطلاق الحملة لـ 200 شركة في مجال: `{target_niche}`...")
         time.sleep(1)
         
         recs = auto_discover_200_leads(target_niche)
-        st.success(f"✅ تم تجهيز قائمة بـ {len(recs)} شركة مستهدفة، وسيبدأ النظام بالإرسال التلقائي!")
+        st.success(f"✅ جاهز! يتم الإرسال الآن بفاصل 5 دقائق بين الرسائل.")
         
         status_box = st.empty()
         prog_bar = st.progress(0)
@@ -184,7 +187,7 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
             active_accs = [a for a in st.session_state.accounts if a["status"] == "active" and a["sent_today"] < 40]
             
             if not active_accs:
-                st.error("🚨 اكتمل الحد اليومي الأقصى لجميع الحسابات! سيتوقف النظام حتى الغد.")
+                st.error("🚨 تم استنفاد الحد اليومي لجميع الحسابات لحمايتها!")
                 break
                 
             current_acc = active_accs[idx % len(active_accs)]
@@ -213,12 +216,12 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
                 st.session_state.crm_stats['sent'] += 1
                 st.session_state.crm_stats['no_reply'] += 1
                 
-                status_box.success(f"✅ [{i+1}/200] تم الإرسال بنجاح | من: {e} ➔ إلى: {r}")
+                status_box.success(f"✅ [{i+1}/200] أرسل بنجاح من {e} إلى {r}")
                 logging.info(f"SUCCESS: {e} sent to {r}")
                 
             except Exception as ex:
                 fail_sent += 1
-                status_box.warning(f"⚠️ مشكلة مؤقتة مع الحساب {e}، تم عزله لحماية البقية...")
+                status_box.warning(f"⚠️ عزل مؤقت للحساب {e}...")
                 logging.error(f"FAIL: {e} -> {r} | Error: {ex}")
                 current_acc["status"] = "suspended"
             
@@ -227,7 +230,7 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
             
             if i < len(recs) - 1:
                 sleep_time = random.randint(delay_min, delay_max)
-                status_box.info(f"⏳ أرسل الرسالة ({i+1}/200). استراحة أمان لمدة {sleep_time // 60} دقائق قبل الرسالة التالية...")
+                status_box.info(f"⏳ تم إرسال ({i+1}/200). استراحة أمان لمدة {sleep_time // 60} دقائق...")
                 time.sleep(sleep_time)
                 
-        st.success(f"🎉 تم إنهاء الحملة بنجاح! إجمالي المرسل بنجاح: {success_sent} رسالة.")
+        st.success(f"🎉 انتهت الحملة بنجاح! إجمالي المرسل: {success_sent} شركة.")
