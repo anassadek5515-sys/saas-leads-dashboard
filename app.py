@@ -60,7 +60,7 @@ if st.button("إطلاق الحملة البريدية الآن", use_container_
     if not leads_list:
       st.warning("الرجاء إدخال إيميل واحد على الأقل في القائمة.")
     else:
-      # شريط التقدم المرئي (ده بيخلي Streamlit مركز ومش بيقفل السكريبت)
+      # شريط التقدم المرئي
       progress_bar = st.progress(0)
       status_text = st.empty()
 
@@ -89,7 +89,7 @@ if st.button("إطلاق الحملة البريدية الآن", use_container_
             success_count += 1
             time.sleep(1)  # فاصل زمني أمان
           except Exception as ex:
-            st.warning(فشل إرسال إلى {lead}: {ex})
+            st.warning(f"فشل إرسال إلى {lead}: {ex}")
 
           # تحديث شريط التقدم
           progress_bar.progress((i + 1) / total_leads)
