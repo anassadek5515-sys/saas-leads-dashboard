@@ -18,10 +18,10 @@ logging.basicConfig(
 
 st.set_page_config(page_title="Autonomous 200-Lead Engine", page_icon="⚡", layout="wide")
 
-st.title("⚡ ماكينة المبيعات الذاتية (حملة الـ 200 شركة أوتوماتيكياً)")
+st.title("⚡ ماكينة المبيعات الذاتية (حملة الـ 200 شركة - سرعة 5 دقائق)")
 st.markdown("---")
 
-# حساباتك الحقيقية مدمجة مسبقاً
+# حساباتك الحقيقية مدمجة مسبقاً (5 حسابات: 2 جيميل و3 أوتلوك)
 if "accounts" not in st.session_state:
     st.session_state.accounts = [
         {"provider": "gmail", "email": "Anassadek5525@gmail.com", "password": "atig ffwp ddxd vgcf", "sent_today": 0, "status": "active"},
@@ -35,10 +35,9 @@ def is_valid_email(email):
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     return re.match(pattern, email) is not None
 
-# محرك البحث الذاتي المعدل: يولد 200 شركة مستهدفة دفعة واحدة!
+# محرك البحث الذاتي لتوليد 200 شركة مستهدفة
 def auto_discover_200_leads(niche):
     raw_leads = []
-    # توليد 200 شركة مستهدفة أوتوماتيكياً بناءً على المجال
     for i in range(1, 201):
         raw_leads.append(f"contact@{niche}store{i}.com")
     return [email for email in raw_leads if is_valid_email(email)]
@@ -52,23 +51,23 @@ st.sidebar.subheader("📋 حالة الحسابات اليومية")
 for acc in st.session_state.accounts:
     st.sidebar.text(f"{acc['email'].split('@')[0]}... | المرسل: {acc['sent_today']}/40")
 
-# واجهة المدخلات الرئيسية
+# واجهة المدخلات الرئيسية (ضبط الافتراضي على 5 دقائق / 300 ثانية)
 col1, col2 = st.columns(2)
 with col1:
     target_niche = st.text_input("حدد مجال الشركات المستهدفة (مثال: ecommerce, retail):", "ecommerce")
     subject = st.text_input("عنوان الرسالة البريدية", "تحليل مخزون متجرك وزيادة أرباحك بنسبة 30%")
 
 with col2:
-    delay_min = st.slider("الحد الأدنى للفاصل الزمني (بالثواني)", 300, 900, 600)
-    delay_max = st.slider("الحد الأقصى للفاصل الزمني (بالثواني)", 900, 1500, 900)
+    delay_min = st.slider("الحد الأدنى للفاصل الزمني (بالثواني)", 150, 600, 300) # افتراضي 5 دقائق
+    delay_max = st.slider("الحد الأقصى للفاصل الزمني (بالثواني)", 300, 900, 400) # افتراضي تقريبي
 
 body = st.text_area("نص الرسالة الترويجية", "أهلاً بك، لاحظنا فرصة لتحسين إدارة المخزون في متجرك وتجنب نفاد المنتجات البائعة عبر نظامنا الذكي مقابل 200$ شهرياً...")
 
 st.markdown("---")
 st.subheader("📊 التحليلات التنبؤية للـ 200 شركة اليومية")
 
-est_replies = 200 * 0.03  # توقع 3% ردود = 6 شركات مهتمة
-est_deals = est_replies * 0.15 # توقع تعاقد شركة واحدة يومياً من كل 200 إيميل
+est_replies = 200 * 0.03  
+est_deals = est_replies * 0.15 
 
 mcol1, mcol2, mcol3 = st.columns(3)
 mcol1.metric("إجمالي الشركات في هذه الحملة", "200 شركة 🏢")
@@ -77,8 +76,8 @@ mcol3.metric("التعاقد اليومي المتوقع (200$/شهرياً) �
 
 st.markdown("---")
 
-# زر التشغيل الذاتي لـ 200 شركة
-if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي بالكامل)"):
+# زر التشغيل الذاتي لـ 200 شركة بفاصل الـ 5 دقائق
+if st.button("🚀 تشغيل ماكينة الـ 200 شركة (بفاصل 5 دقائق)"):
     if not target_niche:
         st.error("❌ الرجاء تحديد مجال الشركات أولاً!")
     else:
@@ -86,7 +85,7 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
         time.sleep(1)
         
         recs = auto_discover_200_leads(target_niche)
-        st.success(f"✅ تم تجهيز قائمة بـ {len(recs)} شركة مستهدفة، وسيبدأ النظام بالإرسال التلقائي للجميع!")
+        st.success(f"✅ تم تجهيز قائمة بـ {len(recs)} شركة مستهدفة، وسيبدأ النظام بالإرسال التلقائي بفاصل 5 دقائق تقريباً بين الرسائل!")
         
         status_box = st.empty()
         prog_bar = st.progress(0)
@@ -96,11 +95,10 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
         idx = 0
         
         for i, r in enumerate(recs):
-            # تصفية الحسابات النشطة التي لم تتجاوز 40 إيميل في اليوم (الحد الآمن للحساب الواحد)
             active_accs = [a for a in st.session_state.accounts if a["status"] == "active" and a["sent_today"] < 40]
             
             if not active_accs:
-                st.error("🚨 اكتمل الحد اليومي الأقصى (200 إيميل) لجميع الحسابات الخمسة لحمايتها من الحظر! سيتوقف النظام أوتوماتيكياً حتى الغد.")
+                st.error("🚨 اكتمل الحد اليومي الأقصى (200 إيميل) لجميع الحسابات لحمايتها! سيتوقف النظام حتى الغد.")
                 break
                 
             current_acc = active_accs[idx % len(active_accs)]
@@ -131,17 +129,17 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
                 
             except Exception as ex:
                 fail_sent += 1
-                status_box.warning(f"⚠️ مشكلة مؤقتة مع الحساب {e}، تم عزله لحماية البقية...")
+                status_box.warning(f"⚠️ مشكلة مؤقتة مع الحساب {e}, تم عزله لحماية البقية...")
                 logging.error(f"FAIL: {e} -> {r} | Error: {ex}")
                 current_acc["status"] = "suspended"
             
             idx += 1
             prog_bar.progress((i + 1) / len(recs))
             
-            # التهدئة المؤقتة الآمنة بين الرسائل
+            # الفاصل الزمني الجديد (حوالي 5 دقائق)
             if i < len(recs) - 1:
                 sleep_time = random.randint(delay_min, delay_max)
-                status_box.info(f"⏳ حالة النظام: أرسل الرسالة رقم ({i+1}/200). استراحة أمان لمدة {sleep_time // 60} دقائق لمنع الحظر...")
+                status_box.info(f"⏳ أرسل الرسالة ({i+1}/200). استراحة لمدة {sleep_time // 60} دقائق (تقريباً 5 دقائق) قبل الرسالة التالية...")
                 time.sleep(sleep_time)
                 
-        st.success(f"🎉 تم إنهاء حملة الـ 200 شركة اليومية بنجاح! إجمالي المرسل بنجاح: {success_sent} رسالة.")
+        st.success(f"🎉 تم إنهاء الحملة بنجاح! إجمالي المرسل بنجاح: {success_sent} رسالة.")
