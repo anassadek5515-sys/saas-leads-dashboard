@@ -1,5 +1,8 @@
 import streamlit as st
 import smtplib
+import imaplib
+import email
+from email.header import decode_header
 import time
 import random
 import re
@@ -16,9 +19,9 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-st.set_page_config(page_title="Autonomous 200-Lead SaaS Engine", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Autonomous B2B SaaS Engine", page_icon="⚡", layout="wide")
 
-st.title("⚡ ماكينة المبيعات الذاتية ولtrace التفاعلات (B2B SaaS Suite)")
+st.title("⚡ ماكينة المبيعات الذاتية وقارئ الردود الآلي (B2B SaaS)")
 st.markdown("---")
 
 # حساباتك الحقيقية مدمجة مسبقاً
@@ -31,25 +34,84 @@ if "accounts" not in st.session_state:
         {"provider": "outlook", "email": "Anassadek5575@outlook.com", "password": "Anas#$@()501093083973=55", "sent_today": 0, "status": "active"}
     ]
 
-# ذاكرة حفظ إحصائيات الردود والصفقات (CRM Memory)
 if "crm_stats" not in st.session_state:
     st.session_state.crm_stats = {
-        "sent": 200,      # المرسل
-        "no_reply": 180,  # لم يردوا
-        "replied": 20,    # ردوا
-        "demo": 8,        # طلبوا الديمو
-        "closed": 3       # تم التعاقد ($200/mo)
+        "sent": 0,
+        "no_reply": 0,
+        "replied": 0,
+        "demo": 0,
+        "closed": 0
     }
 
-def is_valid_email(email):
+def is_valid_email(email_str):
     pattern = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    return re.match(pattern, email) is not None
+    return re.match(pattern, email_str) is not None
 
 def auto_discover_200_leads(niche):
     raw_leads = [f"contact@{niche}store{i}.com" for i in range(1, 201)]
-    return [email for email in raw_leads if is_valid_email(email)]
+    return [e for e in raw_leads if is_valid_email(e)]
 
-# الشريط الجانبي للإحصائيات ومراقبة الحسابات
+# -------------------------------------------------------------
+# 🤖 محرك فحص وصندوق الوارد وتصنيف الردود تلقائياً (IMAP Auto-Reader)
+# -------------------------------------------------------------
+def fetch_and_classify_replies():
+    replied_count = 0
+    demo_count = 0
+    closed_count = 0
+
+    for acc in st.session_state.accounts:
+        p = acc["provider"]
+        e = acc["email"]
+        pwd = acc["password"]
+        
+        imap_srv = "imap.gmail.com" if p == "gmail" else "outlook.office365.com"
+        
+        try:
+            mail = imaplib.IMAP4_SSL(imap_srv)
+            mail.login(e, pwd)
+            mail.select("inbox")
+            
+            # البحث عن الإيميلات الغير مقروءة أو الجديدة
+            status, messages = mail.search(None, 'UNSEEN')
+            email_ids = messages[0].split()
+            
+            for e_id in email_ids:
+                _, msg_data = mail.fetch(e_id, '(RFC822)')
+                for response_part in msg_data:
+                    if isinstance(response_part, tuple):
+                        msg = email.message_from_bytes(response_part[1])
+                        
+                        body_text = ""
+                        if msg.is_multipart():
+                            for part in msg.walk():
+                                if part.get_content_type() == "text/plain":
+                                    body_text += part.get_payload(decode=True).decode('utf-8', errors='ignore')
+                        else:
+                            body_text = msg.get_payload(decode=True).decode('utf-8', errors='ignore')
+                        
+                        body_lower = body_text.lower()
+                        
+                        # تحليل النوايا التلقائي للرسالة
+                        if any(w in body_lower for w in ["demo", "ديمو", "تجربة", "شرح", "try"]):
+                            demo_count += 1
+                            replied_count += 1
+                        elif any(w in body_lower for w in ["subscribe", "buy", "شراء", "اشتراك", "موافق", "deal", "invoice", "200$"]):
+                            closed_count += 1
+                            replied_count += 1
+                        else:
+                            replied_count += 1
+
+            mail.logout()
+        except Exception as ex:
+            logging.error(f"IMAP Read Error on {e}: {ex}")
+
+    # تحديث العدادات أوتوماتيكياً
+    st.session_state.crm_stats['replied'] += replied_count
+    st.session_state.crm_stats['demo'] += demo_count
+    st.session_state.crm_stats['closed'] += closed_count
+    st.session_state.crm_stats['no_reply'] = max(0, st.session_state.crm_stats['sent'] - st.session_state.crm_stats['replied'])
+
+# الشريط الجانبي
 st.sidebar.header("🛡️ لوحة مراقبة الأمان")
 active_count = sum(1 for a in st.session_state.accounts if a["status"] == "active")
 st.sidebar.metric("الحسابات النشطة حالياً", f"{active_count} / {len(st.session_state.accounts)}")
@@ -58,49 +120,36 @@ st.sidebar.subheader("📋 حالة الحسابات اليومية")
 for acc in st.session_state.accounts:
     st.sidebar.text(f"{acc['email'].split('@')[0]}... | المرسل: {acc['sent_today']}/40")
 
-# -------------------------------------------------------------
-# 🎯 قسم تتبع الردود وحالة الصفقات (SaaS Sales Funnel)
-# -------------------------------------------------------------
-st.subheader("📊 لوحة تتبع الردود والعقود الحية (CRM Sales Funnel)")
+# 📊 عرض اللوحة الذكية التلقائية
+st.subheader("📊 لوحة تتبع الردود والعقود التلقائية (Inbox AI Reader)")
 
 crm = st.session_state.crm_stats
 
 c1, c2, c3, c4, c5 = st.columns(5)
-c1.metric("إجمالي الإيميلات المرسلة", f"{crm['sent']} شركة")
+c1.metric("إجمالي المرسل الفعلي", f"{crm['sent']} شركة")
 c2.metric("لم يتم الرد بعد ⏳", f"{crm['no_reply']} شركة")
-c3.metric("شركات ردت 📩", f"{crm['replied']} شركة")
-c4.metric("طلبوا الديمو 💻", f"{crm['demo']} شركات")
-c5.metric("تم التعاقد رسمياً 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
+c3.metric("شركات ردت أوتوماتيك 📩", f"{crm['replied']} شركة")
+c4.metric("طلبوا الديمو تلقائياً 💻", f"{crm['demo']} شركات")
+c5.metric("عقود مغلقة أوتوماتيك 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
 
-# أدوات تحديث أرقام الردود والعقود بسهولة
-with st.expander("📝 تحديث حالة الردود والعقود يدوياً (CRM Tracker)"):
-    u_col1, u_col2, u_col3, u_col4 = st.columns(4)
-    new_replied = u_col1.number_input("عدد الشركات التي ردت:", value=crm['replied'])
-    new_demo = u_col2.number_input("عدد الشركات التي طلبت الديمو:", value=crm['demo'])
-    new_closed = u_col3.number_input("عدد الشركات التي أتمت التعاقد:", value=crm['closed'])
-    
-    if u_col4.button("💾 حفظ التحديثات"):
-        st.session_state.crm_stats['replied'] = new_replied
-        st.session_state.crm_stats['demo'] = new_demo
-        st.session_state.crm_stats['closed'] = new_closed
-        st.session_state.crm_stats['no_reply'] = max(0, crm['sent'] - new_replied)
-        st.success("تم تحديث بيانات الصفقات بنجاح!")
-        st.rerun()
+if st.button("🔄 فحص أوتوماتيكي للـ Inbox وقراءة الردود الجديدة الآن"):
+    with st.spinner("جاري الاتصال بحسابات الـ 5 وقراءة الرسائل الجديدة وتصنيفها..."):
+        fetch_and_classify_replies()
+    st.success("✅ تم فحص جميع الحسابات وتحديث الإحصائيات أوتوماتيكياً من صناديق الوارد!")
 
-# رسم بياني لمسار تحويل المبيعات (Sales Funnel)
+# رسم بياني لمسار تحويل المبيعات
 fig, ax = plt.subplots(figsize=(8, 3))
 categories = ['المرسل', 'لم يردوا', 'ردوا', 'طلبوا الديمو', 'تم التعاقد']
 values = [crm['sent'], crm['no_reply'], crm['replied'], crm['demo'], crm['closed']]
 colors = ['#3498db', '#95a5a6', '#f1c40f', '#e67e22', '#2ecc71']
 
 ax.bar(categories, values, color=colors)
-ax.set_title('مسار تحويل العملاء وحالة الصفقات (Sales Funnel)', fontsize=11, fontweight='bold')
+ax.set_title('مسار المبيعات المحين تلقائياً من الإيميلات (Live Auto Funnel)', fontsize=11, fontweight='bold')
 ax.grid(axis='y', linestyle='--', alpha=0.5)
 st.pyplot(fig)
 
 st.markdown("---")
 
-# واجهة الإعدادات والحملة
 col1, col2 = st.columns(2)
 with col1:
     target_niche = st.text_input("حدد مجال الشركات المستهدفة (مثال: ecommerce, retail):", "ecommerce")
@@ -112,7 +161,7 @@ with col2:
 
 body = st.text_area("نص الرسالة الترويجية", "أهلاً بك، لاحظنا فرصة لتحسين إدارة المخزون في متجرك وتجنب نفاد المنتجات البائعة عبر نظامنا الذكي مقابل 200$ شهرياً...")
 
-# زر التشغيل
+# زر التشغيل الذاتي
 if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي بالكامل)"):
     if not target_niche:
         st.error("❌ الرجاء تحديد مجال الشركات أولاً!")
@@ -177,7 +226,7 @@ if st.button("🚀 تشغيل ماكينة الـ 200 شركة (تلقائي ب�
             
             if i < len(recs) - 1:
                 sleep_time = random.randint(delay_min, delay_max)
-                status_box.info(f"⏳ أرسل الرسالة ({i+1}/200). استراحة لمدة {sleep_time // 60} دقائق قبل الرسالة التالية...")
+                status_box.info(f"⏳ أرسل الرسالة ({i+1}/200). استراحة أمان لمدة {sleep_time // 60} دقائق قبل الرسالة التالية...")
                 time.sleep(sleep_time)
                 
         st.success(f"🎉 تم إنهاء الحملة بنجاح! إجمالي المرسل بنجاح: {success_sent} رسالة.")
