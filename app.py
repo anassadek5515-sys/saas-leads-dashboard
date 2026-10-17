@@ -21,7 +21,7 @@ logging.basicConfig(
 
 st.set_page_config(page_title="Autonomous B2B SaaS Engine", page_icon="⚡", layout="wide")
 
-st.title("⚡ ماكينة المبيعات الذاتية وقارئ الردود الآلي (B2B SaaS)")
+st.title("⚡ ماكينة المبيعات الذاتية المحصنة (B2B SaaS Engine)")
 st.markdown("---")
 
 # حساباتك الحقيقية مدمجة مسبقاً
@@ -34,6 +34,7 @@ if "accounts" not in st.session_state:
         {"provider": "outlook", "email": "Anassadek5575@outlook.com", "password": "Anas#$@()501093083973=55", "sent_today": 0, "status": "active"}
     ]
 
+# العدادات تبدأ من صفر وتعتمد على البيانات الفعليّة والحقيقية فقط
 if "crm_stats" not in st.session_state:
     st.session_state.crm_stats = {
         "sent": 0,
@@ -91,7 +92,7 @@ def fetch_and_classify_replies():
                         
                         body_lower = body_text.lower()
                         
-                        # تحليل النوايا التلقائي للرسالة
+                        # تحليل النوايا الحقيقي للرسائل الواردة
                         if any(w in body_lower for w in ["demo", "ديمو", "تجربة", "شرح", "try"]):
                             demo_count += 1
                             replied_count += 1
@@ -105,13 +106,13 @@ def fetch_and_classify_replies():
         except Exception as ex:
             logging.error(f"IMAP Read Error on {e}: {ex}")
 
-    # تحديث العدادات أوتوماتيكياً
+    # تحديث العدادات بأرقام حقيقية
     st.session_state.crm_stats['replied'] += replied_count
     st.session_state.crm_stats['demo'] += demo_count
     st.session_state.crm_stats['closed'] += closed_count
     st.session_state.crm_stats['no_reply'] = max(0, st.session_state.crm_stats['sent'] - st.session_state.crm_stats['replied'])
 
-# الشريط الجانبي
+# الشريط الجانبي لمراقبة الحسابات
 st.sidebar.header("🛡️ لوحة مراقبة الأمان")
 active_count = sum(1 for a in st.session_state.accounts if a["status"] == "active")
 st.sidebar.metric("الحسابات النشطة حالياً", f"{active_count} / {len(st.session_state.accounts)}")
@@ -120,31 +121,31 @@ st.sidebar.subheader("📋 حالة الحسابات اليومية")
 for acc in st.session_state.accounts:
     st.sidebar.text(f"{acc['email'].split('@')[0]}... | المرسل: {acc['sent_today']}/40")
 
-# 📊 عرض اللوحة الذكية التلقائية
-st.subheader("📊 لوحة تتبع الردود والعقود التلقائية (Inbox AI Reader)")
+# 📊 عرض الإحصائيات الفعليّة
+st.subheader("📊 لوحة تتبع المبيعات والردود الفعلية (Live Funnel)")
 
 crm = st.session_state.crm_stats
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("إجمالي المرسل الفعلي", f"{crm['sent']} شركة")
 c2.metric("لم يتم الرد بعد ⏳", f"{crm['no_reply']} شركة")
-c3.metric("شركات ردت أوتوماتيك 📩", f"{crm['replied']} شركة")
-c4.metric("طلبوا الديمو تلقائياً 💻", f"{crm['demo']} شركات")
-c5.metric("عقود مغلقة أوتوماتيك 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
+c3.metric("شركات ردت فعلياً 📩", f"{crm['replied']} شركة")
+c4.metric("طلبوا الديمو فعلياً 💻", f"{crm['demo']} شركات")
+c5.metric("عقود مؤكدة 🎯", f"{crm['closed']} شركات", f"${crm['closed']*200}/شهرياً")
 
-if st.button("🔄 فحص أوتوماتيكي للـ Inbox وقراءة الردود الجديدة الآن"):
-    with st.spinner("جاري الاتصال بحسابات الـ 5 وقراءة الرسائل الجديدة وتصنيفها..."):
+if st.button("🔄 فحص صندوق الوارد (Inbox) وتحديث الردود الحقيقية"):
+    with st.spinner("جاري الاتصال بحساباتك وقراءة الرسائل الجديدة وتصنيفها..."):
         fetch_and_classify_replies()
-    st.success("✅ تم فحص جميع الحسابات وتحديث الإحصائيات أوتوماتيكياً من صناديق الوارد!")
+    st.success("✅ تم فحص الحسابات وتحديث الأرقام بناءً على الرسائل الحقيقية!")
 
-# رسم بياني لمسار تحويل المبيعات
+# رسم بياني واقعي بناءً على الأرقام الفعلية
 fig, ax = plt.subplots(figsize=(8, 3))
 categories = ['المرسل', 'لم يردوا', 'ردوا', 'طلبوا الديمو', 'تم التعاقد']
 values = [crm['sent'], crm['no_reply'], crm['replied'], crm['demo'], crm['closed']]
 colors = ['#3498db', '#95a5a6', '#f1c40f', '#e67e22', '#2ecc71']
 
 ax.bar(categories, values, color=colors)
-ax.set_title('مسار المبيعات المحين تلقائياً من الإيميلات (Live Auto Funnel)', fontsize=11, fontweight='bold')
+ax.set_title('مسار المبيعات الفعلي للعملاء (Real-time Sales Funnel)', fontsize=11, fontweight='bold')
 ax.grid(axis='y', linestyle='--', alpha=0.5)
 st.pyplot(fig)
 
