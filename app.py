@@ -23,7 +23,7 @@ st.set_page_config(
 
 st.title("⚡ منصة المبيعات الذاتية والتحليلات (B2B SaaS Engine)")
 
-# 1. الحسابات الفعلية الخمسة
+# أسطول الحسابات الخمسة المحدث بالبيانات الفعلية
 if "accounts" not in st.session_state:
   st.session_state.accounts = [
       {
@@ -43,21 +43,21 @@ if "accounts" not in st.session_state:
       {
           "provider": "outlook",
           "email": "Anassadek5565@outlook.com",
-          "password": "Anas#$@()501093083973=55",
+          "password": "huzwoiycgptrvyey",
           "sent_today": 0,
           "status": "active",
       },
       {
           "provider": "outlook",
-          "email": "Anassadek5585@outlook.com",
-          "password": "Anas#$@()501093083973",
+          "email": "Anassadek5505@outlook.com",
+          "password": "quvgzkibnrttasmb",
           "sent_today": 0,
           "status": "active",
       },
       {
           "provider": "outlook",
           "email": "Anassadek5575@outlook.com",
-          "password": "Anas#$@()501093083973=55",
+          "password": "xxzofjddcxzetefu",
           "sent_today": 0,
           "status": "active",
       },
@@ -72,7 +72,6 @@ if "crm_stats" not in st.session_state:
       "closed": 0,
   }
 
-# مؤشر القائمة لضمان عدم التكرار أو الوقوف
 if "current_lead_index" not in st.session_state:
   st.session_state.current_lead_index = 0
 
@@ -264,9 +263,7 @@ with col_b1:
             st.error("🚨 تم استنفاد الحد اليومي لجميع الحسابات الخمسة!")
             break
 
-          current_acc = active_accs[
-              (start_idx + i) % len(active_accs)
-          ]  # تدوير عادل
+          current_acc = active_accs[(start_idx + i) % len(active_accs)]
           p = current_acc["provider"]
           e = current_acc["email"]
           pwd = current_acc["password"]
